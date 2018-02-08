@@ -1,0 +1,45 @@
+############################################################
+# Dockerfile to build Oracle JDK 8 + Tomcat 8.5 container image
+############################################################
+# Set the base image to RHEL
+FROM rhel7
+
+# File Author / Maintainer
+MAINTAINER Kuberiter
+
+# Prepare environment
+ENV JAVA_HOME /opt/jdk8
+ENV CATALINA_HOME /opt/tomcat8
+ENV PATH $PATH:$JAVA_HOME/bin:$CATALINA_HOME/bin:$CATALINA_HOME/scripts
+
+# Install Oracle JDK8
+ENV JAVA_VERSION 8u151
+ENV JAVA_BUILD 8u151-b12
+ENV JAVA_HASH_URL e758a0de34e24606bca991d704f6dcbf
+
+################## BEGIN INSTALLATION ######################
+#Install JDK 8
+RUN curl -LO ftp://195.220.108.108/linux/centos/7.4.1708/os/x86_64/Packages/wget-1.14-15.el7.x86_64.rpm
+RUN rpm -ivh wget-1.14-15.el7.x86_64.rpm
+RUN wget --no-cookies --no-check-certificate --header "Cookie: oraclelicense=accept-securebackup-cookie" http://download.oracle.com/otn-pub/java/jdk/${JAVA_BUILD}/${JAVA_HASH_URL}/jdk-${JAVA_VERSION}-linux-x64.tar.gz
+RUN tar -xvf jdk-${JAVA_VERSION}-linux-x64.tar.gz
+RUN rm jdk*.tar.gz
+RUN mv jdk* ${JAVA_HOME}
+
+# Install Tomcat
+ENV TOMCAT_MAJOR 8
+ENV TOMCAT_VERSION 8.5.23
+
+#Install Tomcat 8.5.23
+RUN curl -LO http://www-eu.apache.org/dist/tomcat/tomcat-${TOMCAT_MAJOR}/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz
+RUN tar -xf apache-tomcat-${TOMCAT_VERSION}.tar.gz
+RUN rm apache-tomcat*.tar.gz
+RUN mv apache-tomcat* ${CATALINA_HOME}
+
+RUN chmod +x ${CATALINA_HOME}/bin/*sh
+
+WORKDIR /opt/tomcat8
+
+EXPOSE 8080
+CMD /opt/tomcat8/bin/catalina.sh run && tail -f /opt/tomcat8/logs/catalina.out
+
